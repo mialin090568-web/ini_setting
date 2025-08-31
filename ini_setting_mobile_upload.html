@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>設定表單｜站點 / 飲料 / 便當點心 / 飲料初始量</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0f172a; --muted:#94a3b8; --line:#1f2937;
+      --text:#e5e7eb; --accent:#22c55e; --accent-2:#3b82f6; --warn:#f59e0b; --error:#ef4444;
+      --radius:14px; --pad:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      color:var(--text); background:var(--bg);
+    }
+    header{padding:18px var(--pad) 8px; text-align:left; position:sticky; top:0; z-index:20; background:linear-gradient(180deg, rgba(11,18,32,.9), rgba(11,18,32,.7)); backdrop-filter:saturate(120%) blur(6px); border-bottom:1px solid rgba(255,255,255,.06)}
+    header h1{margin:0 0 4px; font-size:18px; font-weight:800}
+    header p{margin:0; color:var(--muted); font-size:13px}
+    main{max-width:1100px; margin:0 auto 100px; padding:0 var(--pad); display:grid; gap:12px}
+
+    section{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px; box-shadow: 0 6px 18px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.03); }
+    section h2{margin:0 0 6px; font-size:16px}
+    .hint{color:var(--muted); font-size:12px; margin:0 0 10px}
+
+    .field{display:flex; flex-direction:column; gap:6px}
+    .grid-1{display:grid; grid-template-columns:1fr; gap:10px}
+
+    label{font-size:12px; color:var(--muted)}
+    input[type="text"], input[type="number"]{ width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:#0b1220; color:var(--text); outline:none; min-height:44px; font-size:16px; }
+    input[type="number"]{appearance:textfield}
+    input:focus{border-color:#334155}
+
+    .btn{border:1px solid transparent; padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:700; min-height:44px; font-size:16px}
+    .btn.primary{background:linear-gradient(180deg, var(--accent), #16a34a); color:#07130c}
+    .btn.secondary{background:linear-gradient(180deg, var(--accent-2), #1f6feb); color:#081527}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+
+    .toolbar{position:sticky; bottom:0; display:flex; gap:10px; padding-top:10px; background:linear-gradient(180deg, rgba(15,23,42,0), rgba(15,23,42,.85)); backdrop-filter:blur(4px)}
+    .toolbar .inner{display:flex; gap:10px; width:100%; justify-content:flex-end}
+
+    .msg{margin-top:10px; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:#0b1220; font-size:14px}
+    .msg.ok{border-color:rgba(16,185,129,.35)}
+    .msg.err{border-color:rgba(239,68,68,.45)}
+
+    .card-list{display:grid; gap:8px}
+    .card{border:1px solid var(--line); border-radius:12px; padding:10px; background:#0b1220}
+    .card .title{display:flex; align-items:center; justify-content:space-between; font-weight:700; margin-bottom:8px}
+    .row-4{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+    @media(min-width:768px){ .row-4{grid-template-columns:repeat(4,1fr)} header h1{font-size:22px} section h2{font-size:18px} }
+
+    .badge{display:inline-block; padding:2px 8px; border-radius:999px; background:#10243f; border:1px solid #1f3b61; font-size:12px; color:#bcd7ff}
+    .small{font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>設定表單</h1>
+    <p>手機優先：更易檢視與填寫</p>
+  </header>
+  <main>
+    <!-- 1) 站點設定 -->
+    <section id="siteSection">
+      <h2>1. 站點設定 <span class="badge">8 個</span></h2>
+      <p class="hint">輸入 8 個站點名稱，送至 <code>webhook1</code>。</p>
+      <div class="grid-1" id="siteInputs"></div>
+      <div class="toolbar"><div class="inner">
+        <button class="btn secondary" id="siteFillDemo">示例</button>
+        <button class="btn primary" id="siteSubmit">確認送出</button>
+      </div></div>
+      <div class="msg" id="siteMsg" hidden></div>
+    </section>
+
+    <!-- 2) 飲料設定 -->
+    <section id="drinkSection">
+      <h2>2. 飲料設定 <span class="badge">4 種</span></h2>
+      <p class="hint">設定 4 種飲料名稱，送至 <code>webhook2</code>。</p>
+      <div class="grid-1" id="drinkInputs"></div>
+      <div class="toolbar"><div class="inner">
+        <button class="btn secondary" id="drinkFillDemo">示例</button>
+        <button class="btn primary" id="drinkSubmit">確認送出</button>
+      </div></div>
+      <div class="msg" id="drinkMsg" hidden></div>
+    </section>
+
+    <!-- 3) 便當點心設定：以卡片呈現每個站點 -->
+    <section id="mealSection">
+      <h2>3. 便當／點心設定 <span class="badge">8 站點 × 葷/素</span></h2>
+      <p class="hint">為 8 站設置便當與點心數量（葷/素），送至 <code>webhook3</code>。</p>
+      <div class="card-list" id="mealCards"></div>
+      <div class="toolbar"><div class="inner">
+        <button class="btn secondary" id="mealFillDemo">示例</button>
+        <button class="btn primary" id="mealSubmit">確認送出</button>
+      </div></div>
+      <div class="msg" id="mealMsg" hidden></div>
+    </section>
+
+    <!-- 4) 飲料初始量設定：以卡片呈現每個站點 × 4 飲料 -->
+    <section id="drinkInitSection">
+      <h2>4. 飲料初始量設定 <span class="badge">8 站點 × 4 飲料</span></h2>
+      <p class="hint">為 8 站點設定 4 種飲料的初始量，送至 <code>webhook4</code>。</p>
+      <div class="card-list" id="drinkInitCards"></div>
+      <div class="toolbar"><div class="inner">
+        <button class="btn secondary" id="drinkInitFillDemo">示例</button>
+        <button class="btn primary" id="drinkInitSubmit">確認送出</button>
+      </div></div>
+      <div class="msg" id="drinkInitMsg" hidden></div>
+    </section>
+  </main>
+
+  <script>
+    // ====== Webhook 端點 ======
+    const WEBHOOKS = {
+      site:      '設定站點 webhook',
+      drink:     '設定飲料 webhook',
+      meal:      '設定餐點 webhook',
+      drinkInit: '設定飲料數量 webhook',
+      ini:       '初始化 webhook',
+    };
+
+    // ====== URL query: lineId ======
+    const urlParams = new URLSearchParams(window.location.search);
+    const LINE_ID = urlParams.get('lineId') || null;
+
+    // ====== DOM 參照 ======
+    const siteInputsEl   = document.getElementById('siteInputs');
+    const drinkInputsEl  = document.getElementById('drinkInputs');
+    const mealCardsEl    = document.getElementById('mealCards');
+    const drinkInitCards = document.getElementById('drinkInitCards');
+
+    const siteMsgEl   = document.getElementById('siteMsg');
+    const drinkMsgEl  = document.getElementById('drinkMsg');
+    const mealMsgEl   = document.getElementById('mealMsg');
+    const drinkInitMsgEl = document.getElementById('drinkInitMsg');
+
+    const SITE_COUNT = 8; const DRINK_COUNT = 4;
+
+    // ====== localStorage keys & state ======
+    const LS_KEYS = { SITES:'form_sites', DRINKS:'form_drinks', MEALS:'form_meals', DRINK_INIT:'form_drink_init' };
+    const loadState = () => {
+      try{
+        return {
+          sites: JSON.parse(localStorage.getItem(LS_KEYS.SITES)||'[]'),
+          drinks: JSON.parse(localStorage.getItem(LS_KEYS.DRINKS)||'[]'),
+          meals: JSON.parse(localStorage.getItem(LS_KEYS.MEALS)||'[]'),
+          drinkInit: JSON.parse(localStorage.getItem(LS_KEYS.DRINK_INIT)||'[]'),
+        };
+      }catch{ return {sites:[],drinks:[],meals:[],drinkInit:[]}; }
+    };
+    const saveState = (key, data) => localStorage.setItem(LS_KEYS[key.toUpperCase()], JSON.stringify(data));
+
+    // ====== 元件建立 ======
+    function buildSiteInputs(names=[]) {
+      siteInputsEl.innerHTML='';
+      for(let i=0;i<SITE_COUNT;i++){
+        const wrap=document.createElement('div'); wrap.className='field';
+        const label=document.createElement('label'); label.textContent=`站點 ${i+1}`;
+        const input=document.createElement('input'); input.type='text'; input.placeholder='輸入站點名稱…'; input.value=names[i]||`站點${i+1}`; input.dataset.index=i;
+        wrap.append(label,input); siteInputsEl.appendChild(wrap);
+      }
+    }
+
+    function buildDrinkInputs(names=[]) {
+      drinkInputsEl.innerHTML='';
+      for(let i=0;i<DRINK_COUNT;i++){
+        const wrap=document.createElement('div'); wrap.className='field';
+        const label=document.createElement('label'); label.textContent=`飲料 ${i+1}`;
+        const input=document.createElement('input'); input.type='text'; input.placeholder='輸入飲料名稱…'; input.value=names[i]||''; input.dataset.index=i;
+        wrap.append(label,input); drinkInputsEl.appendChild(wrap);
+      }
+      rebuildDrinkInitCards();
+    }
+
+    function buildMealCards(siteNames){
+      mealCardsEl.innerHTML='';
+      for(let i=0;i<SITE_COUNT;i++){
+        const card=document.createElement('div'); card.className='card';
+        const title=document.createElement('div'); title.className='title'; title.innerHTML=`<span>${siteNames[i]||`站點${i+1}`}</span><span class="badge">便當/點心</span>`;
+        const row=document.createElement('div'); row.className='row-4';
+        const fields=[['便當（葷）','bento_meat'],['便當（素）','bento_veg'],['點心（葷）','snack_meat'],['點心（素）','snack_veg']];
+        for(const [labelText,key] of fields){
+          const f=document.createElement('div'); f.className='field';
+          const lab=document.createElement('label'); lab.textContent=labelText;
+          const input=document.createElement('input'); input.type='number'; input.min='0'; input.placeholder='0'; input.value='0'; input.dataset.siteIndex=i; input.dataset.kind=key;
+          f.append(lab,input); row.appendChild(f);
+        }
+        card.append(title,row); mealCardsEl.appendChild(card);
+      }
+      const {meals}=loadState();
+      if(Array.isArray(meals) && meals.length===SITE_COUNT){
+        for(let i=0;i<SITE_COUNT;i++){
+          const row=meals[i]||{};
+          ['bento_meat','bento_veg','snack_meat','snack_veg'].forEach(k=>{
+            const input=mealCardsEl.querySelector(`input[data-site-index="${i}"][data-kind="${k}"]`);
+            if(input && typeof row[k]!== 'undefined') input.value=row[k];
+          });
+        }
+      }
+    }
+
+    function rebuildDrinkInitCards(){
+      const siteNames=getSiteNames();
+      const drinkNames=getDrinkNames(false);
+      drinkInitCards.innerHTML='';
+      for(let i=0;i<SITE_COUNT;i++){
+        const card=document.createElement('div'); card.className='card';
+        const title=document.createElement('div'); title.className='title'; title.innerHTML=`<span>${siteNames[i]||`站點${i+1}`}</span><span class="badge">飲料初始量</span>`;
+        const row=document.createElement('div'); row.className='row-4';
+        for(let j=0;j<DRINK_COUNT;j++){
+          const f=document.createElement('div'); f.className='field';
+          const lab=document.createElement('label'); lab.textContent= drinkNames[j] || `飲料 ${j+1}`;
+          const input=document.createElement('input'); input.type='number'; input.min='0'; input.placeholder='0'; input.value='0'; input.dataset.siteIndex=i; input.dataset.drinkIndex=j;
+          f.append(lab,input); row.appendChild(f);
+        }
+        card.append(title,row); drinkInitCards.appendChild(card);
+      }
+      const {drinkInit}=loadState();
+      if(Array.isArray(drinkInit) && drinkInit.length===SITE_COUNT){
+        for(let i=0;i<SITE_COUNT;i++){
+          for(let j=0;j<DRINK_COUNT;j++){
+            const input=drinkInitCards.querySelector(`input[data-site-index="${i}"][data-drink-index="${j}"]`);
+            if(input && drinkInit[i] && typeof drinkInit[i][j]!== 'undefined') input.value=drinkInit[i][j];
+          }
+        }
+      }
+    }
+
+    // ====== Helpers ======
+    function getSiteNames(){
+      return Array.from(siteInputsEl.querySelectorAll('input[type="text"]')).map(i=> i.value.trim() || `站點${(+i.dataset.index)+1}`);
+    }
+    function getDrinkNames(requireFull=true){
+      const vals=Array.from(drinkInputsEl.querySelectorAll('input[type="text"]')).map(i=> i.value.trim());
+      if(requireFull && vals.filter(Boolean).length!==DRINK_COUNT) return [];
+      return vals.map((v,idx)=> v || `飲料${idx+1}`);
+    }
+    function getMealMatrix(){
+      const out=[]; for(let i=0;i<SITE_COUNT;i++){
+        const row={}; ['bento_meat','bento_veg','snack_meat','snack_veg'].forEach(k=>{
+          const input=mealCardsEl.querySelector(`input[data-site-index="${i}"][data-kind="${k}"]`);
+          row[k]=Number(input?.value||0);
+        }); out.push(row);
+      } return out;
+    }
+    function getDrinkInitMatrix(){
+      const matrix=[]; for(let i=0;i<SITE_COUNT;i++){
+        const row=[]; for(let j=0;j<DRINK_COUNT;j++){
+          const input=drinkInitCards.querySelector(`input[data-site-index="${i}"][data-drink-index="${j}"]`);
+          row.push(Number(input?.value||0));
+        } matrix.push(row);
+      } return matrix;
+    }
+
+    function showMsg(el, text, ok=false){ el.hidden=false; el.textContent=text; el.className='msg '+(ok?'ok':'err'); }
+    function clearMsg(el){ el.hidden=true; el.textContent=''; el.className='msg'; }
+    function debounce(fn,wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),wait); } }
+
+    async function postJSON(url, payload, btn, msgEl){
+      clearMsg(msgEl); const original=btn.textContent; btn.disabled=true; btn.textContent='送出中…';
+      try{
+        const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const text=await res.text(); if(!res.ok) throw new Error(`HTTP ${res.status}：${text||'未知錯誤'}`);
+        showMsg(msgEl, `送出成功：${text}`, true);
+      }catch(err){ showMsg(msgEl, `送出失敗：${err.message||err}`, false); }
+      finally{ btn.disabled=false; btn.textContent=original; }
+    }
+
+    // ====== 綁定送出 ======
+    document.getElementById('siteSubmit').addEventListener('click', ()=>{
+      const names=getSiteNames(); const payload={sites:names, lineId:LINE_ID};
+      saveState('sites', names); postJSON(WEBHOOKS.site, payload, document.getElementById('siteSubmit'), siteMsgEl);
+      buildMealCards(names); rebuildDrinkInitCards();
+    });
+
+    document.getElementById('drinkSubmit').addEventListener('click', ()=>{
+      const drinks=getDrinkNames(); if(!drinks.length){ showMsg(drinkMsgEl, `請填滿 ${DRINK_COUNT} 種飲料後再送出`, false); return; }
+      const payload={drinks, lineId:LINE_ID}; saveState('drinks', drinks); postJSON(WEBHOOKS.drink, payload, document.getElementById('drinkSubmit'), drinkMsgEl); rebuildDrinkInitCards();
+    });
+
+    document.getElementById('mealSubmit').addEventListener('click', ()=>{
+      const siteNames=getSiteNames(); const matrix=getMealMatrix();
+      const detail=siteNames.map((name,i)=>({site:name, bento:{meat:matrix[i].bento_meat, veg:matrix[i].bento_veg}, snack:{meat:matrix[i].snack_meat, veg:matrix[i].snack_veg}}));
+      const payload={items:detail, lineId:LINE_ID}; saveState('meals', matrix); postJSON(WEBHOOKS.meal, payload, document.getElementById('mealSubmit'), mealMsgEl);
+    });
+
+    document.getElementById('drinkInitSubmit').addEventListener('click', ()=>{
+      const siteNames=getSiteNames(); const drinkNames=getDrinkNames(false); const matrix=getDrinkInitMatrix();
+      const items=siteNames.map((site,i)=>({site, qty: matrix[i]}));
+      const payload={drinks:drinkNames, items, lineId:LINE_ID}; saveState('drink_init', matrix);
+      postJSON(WEBHOOKS.drinkInit, payload, document.getElementById('drinkInitSubmit'), drinkInitMsgEl);
+    });
+
+    // ====== 示例填入 ======
+    document.getElementById('siteFillDemo').addEventListener('click', ()=>{
+      const demo=['北一','北二','中一','中二','南一','南二','東一','東二']; buildSiteInputs(demo); buildMealCards(demo); rebuildDrinkInitCards();
+    });
+    document.getElementById('drinkFillDemo').addEventListener('click', ()=>{
+      const demo=['無糖綠','半糖紅','拿鐵','可爾必思']; buildDrinkInputs(demo); rebuildDrinkInitCards();
+    });
+    document.getElementById('mealFillDemo').addEventListener('click', ()=>{
+      for(let i=0;i<SITE_COUNT;i++){
+        [['bento_meat',2],['bento_veg',1],['snack_meat',3],['snack_veg',2]].forEach(([k,v])=>{
+          const input=mealCardsEl.querySelector(`input[data-site-index="${i}"][data-kind="${k}"]`); if(input) input.value=String(v);
+        });
+      }
+    });
+    document.getElementById('drinkInitFillDemo').addEventListener('click', ()=>{
+      for(let i=0;i<SITE_COUNT;i++){
+        for(let j=0;j<DRINK_COUNT;j++){
+          const input=drinkInitCards.querySelector(`input[data-site-index="${i}"][data-drink-index="${j}"]`); if(input) input.value=String((i+j)%4);
+        }
+      }
+    });
+
+    // ====== 初始化：開頁即向 ini_webhook 取站點/飲料 ======
+    async function init(){
+      // 先建空畫面，避免白屏
+      const {sites,drinks,meals}=loadState();
+      buildSiteInputs(sites); buildDrinkInputs(drinks);
+      buildMealCards(getSiteNames()); rebuildDrinkInitCards();
+
+      try {
+        const res = await fetch(WEBHOOKS.ini, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ lineId: LINE_ID })
+        });
+        if(res.ok){
+          const data = await res.json();
+          if(Array.isArray(data.sites) && data.sites.length){ saveState('sites', data.sites); }
+          if(Array.isArray(data.drinks) && data.drinks.length){ saveState('drinks', data.drinks); }
+        } else {
+          console.warn('ini_webhook 非 2xx 回應', res.status);
+        }
+      }catch(err){ console.warn('ini_webhook 請求失敗', err); }
+
+      // 用最新的 localStorage 值重建畫面
+      const st=loadState();
+      buildSiteInputs(st.sites); buildDrinkInputs(st.drinks);
+      buildMealCards(getSiteNames()); rebuildDrinkInitCards();
+
+      // 還原餐點歷史值
+      if(Array.isArray(st.meals) && st.meals.length===SITE_COUNT){
+        for(let i=0;i<SITE_COUNT;i++){
+          const row=st.meals[i]||{};
+          ['bento_meat','bento_veg','snack_meat','snack_veg'].forEach(k=>{
+            const input=mealCardsEl.querySelector(`input[data-site-index="${i}"][data-kind="${k}"]`);
+            if(input && typeof row[k]!== 'undefined') input.value=row[k];
+          });
+        }
+      }
+
+      // 綁定同步事件
+      siteInputsEl.addEventListener('input', debounce(()=>{ buildMealCards(getSiteNames()); rebuildDrinkInitCards(); }, 250));
+      drinkInputsEl.addEventListener('input', debounce(rebuildDrinkInitCards, 250));
+    }
+    init();
+  </script>
+</body>
+</html>
