@@ -183,7 +183,7 @@
         for(const [labelText,key] of fields){
           const f=document.createElement('div'); f.className='field';
           const lab=document.createElement('label'); lab.textContent=labelText;
-          const input=document.createElement('input'); input.type='number'; input.min='0'; input.placeholder='0'; input.value='0'; input.dataset.siteIndex=i; input.dataset.kind=key;
+          const input=document.createElement('input'); input.type='number'; input.min='0'; input.step='any';input.placeholder='0'; input.value='0'; input.dataset.siteIndex=i; input.dataset.kind=key;
           f.append(lab,input); row.appendChild(f);
         }
         card.append(title,row); mealCardsEl.appendChild(card);
@@ -211,7 +211,7 @@
         for(let j=0;j<DRINK_COUNT;j++){
           const f=document.createElement('div'); f.className='field';
           const lab=document.createElement('label'); lab.textContent= drinkNames[j] || `飲料 ${j+1}`;
-          const input=document.createElement('input'); input.type='number'; input.min='0'; input.placeholder='0'; input.value='0'; input.dataset.siteIndex=i; input.dataset.drinkIndex=j;
+          const input=document.createElement('input'); input.type='number'; input.min='0'; input.step='any'; input.placeholder='0'; input.value='0'; input.dataset.siteIndex=i; input.dataset.drinkIndex=j;
           f.append(lab,input); row.appendChild(f);
         }
         card.append(title,row); drinkInitCards.appendChild(card);
@@ -360,4 +360,5 @@
   </script>
 </body>
 </html>
+
 
